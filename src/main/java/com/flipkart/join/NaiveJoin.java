@@ -82,6 +82,8 @@ class AlgoImpl
             }
         }
 
+        System.out.println("Data in");
+
     }
 
     public void join(int start, int end)
@@ -127,6 +129,7 @@ public class NaiveJoin {
     public static void main(String [] args)
     {
         AlgoImpl impl = new AlgoImpl();
+        impl.fillData();
         impl.join(0,1000000);
     }
 }
