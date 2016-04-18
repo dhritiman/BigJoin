@@ -6,15 +6,13 @@ import org.apache.lucene.util.OpenBitSet;
 import java.util.Random;
 
 /**
- * Created by dhritiman.das on 4/15/16.
+ * Created by dhritiman.das on 4/18/16.
  */
+public class JoinData {
 
-class AlgoImpl
-{
     private int [][] listingSource;  // Listing is ordinal
     private int [][] listingAttribute; // Listing is ordinal
     OpenBitSet[] shToPincodeServicability; // Source-Hash is ordinal
-    OpenBitSet [] result;
 
     private static final int LISTINGS = 10000000;  //actual per shard 10M
     private static final int MAX_SOURCES =5;  //average per listing 3-4
@@ -22,12 +20,14 @@ class AlgoImpl
     private static final int MAX_PINCODES = 20000; // scale to 20000
     private static final int MAX_SOURCE_HASHES = 500000; // estimated - 500K
 
-    public AlgoImpl()
+    private static final String hashSeprator = "_".intern();
+    private static final String emptyString = "".intern();
+
+    public JoinData()
     {
         listingSource = new int[LISTINGS][MAX_SOURCES]; // Assuming a maximum of MAX_SOURCES per listing - extras will be 0 or -1
         listingAttribute = new int[LISTINGS][MAX_ATTRIBUTES]; // Assuming a maximum of MAX_ATTRIBUTES per sources
         shToPincodeServicability = new OpenBitSet[MAX_SOURCE_HASHES];
-        result = new OpenBitSet[LISTINGS];
     }
 
     public void fillData()
@@ -37,7 +37,7 @@ class AlgoImpl
         {
             for(int j = 0 ; j < MAX_SOURCES; j++ )
             {
-                listingSource[i][j] = Enums.getSource(random(1,20));
+                listingSource[i][j] = Enums.getSource(random(1, 20));
             }
         }
 
@@ -81,9 +81,13 @@ class AlgoImpl
 
     }
 
-    public void join(int start, int end)
+    public JoinTaskResult join(int start, int batchSize, String taskId)
     {
-        for(int i = start; i < end; i++)
+        long  millis = System.currentTimeMillis();
+        System.out.println("Starting join for taskId - " + taskId + " at time " + millis);
+        OpenBitSet[] result = new OpenBitSet[batchSize];
+        int targetIndex = 0;
+        for(int i = start; i < start + batchSize; i++)
         {
             OpenBitSet listingServicability = new OpenBitSet(MAX_PINCODES);
 
@@ -94,11 +98,18 @@ class AlgoImpl
 
                 //Generate source hash
                 //TODO Use shared library to compute the hash
-                String sourceHash = listingSource[i][j] + "";
+                //TODO this string manipulation is creating a GC overhead limit exceeded error
+                //Because of string manipulations. Needs to be kept in mind for the library call
+                //TODO or create a separate structure with Listing to SourceHash before hand first
+                // for now commenting this part as we are anyways taking a ORD
+
+                String sourceHash = listingSource[i][j] + emptyString ;
                 for(int k = 0; k < MAX_ATTRIBUTES ; k++)
                 {
-                    sourceHash += "_" + listingAttribute[k];
+                    sourceHash += hashSeprator + listingAttribute[k];
                 }
+
+
                 //TODO lookup sourceHashToOrd map to get sourcehash ordinal
                 //This source-hash will be represented by a ordinal which will be already
                 //present in source-hash to ordinal map.
@@ -112,26 +123,11 @@ class AlgoImpl
                 //System.out.println("Doing a union with sourceHashOrd " + sourceHashOrd + " for listing " + i);
                 listingServicability.union(bitSet);
             }
-            result[i] = listingServicability;
+            result[targetIndex++] = listingServicability;
         }
-        System.out.println("Done");
-    }
-
-    public void printResult(int start, int end)
-    {
-        for(int i = start ; i < end; i++)
-        {
-            printOpenBitSet(result[i],MAX_PINCODES);
-        }
-    }
-
-    private void printOpenBitSet(OpenBitSet bitSet, long size) {
-        //System.out.println("Printing Bitset : Size " + size);
-        for(int i = 0 ; i < size; i++)
-        {
-            System.out.print(bitSet.get(i) ? 1 : 0);
-        }
-        System.out.println();
+        long  afterMillis = System.currentTimeMillis();
+        System.out.println("Ending join for taskId - " + taskId + " - Elapsed = " + (afterMillis - millis)/1000);
+        return new JoinTaskResult(MAX_PINCODES,start,batchSize,result);
     }
 
     private int random(int x, int y)
@@ -143,23 +139,4 @@ class AlgoImpl
         return result;
     }
 
-
-}
-
-public class NaiveJoin {
-
-    public static void main(String [] args)
-    {
-        AlgoImpl impl = new AlgoImpl();
-        System.out.println("Start filling data");
-        impl.fillData();
-        System.out.println("Start Joining");
-        long millis = System.currentTimeMillis();
-        impl.join(0,10000000);
-        long millisAfter = System.currentTimeMillis();
-        double timeInSecs = (millisAfter - millis)/1000 ;
-        System.out.println("Done with join : Time taken = " + timeInSecs );
-
-        //impl.printResult(0, 10);
-    }
 }
