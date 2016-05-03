@@ -12,7 +12,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.7</java.version>
-        <main.class>com.flipkart.join.ListingSplitJoin</main.class>
+        <!-- <main.class>com.flipkart.join.ListingSplitJoin</main.class> -->
+        <!--<main.class>com.flipkart.mrapps.wcdemo.WCDemoApp</main.class> -->
+        <main.class>com.flipkart.mrapps.distributedjoin.DistributedJoinApp</main.class>
         <bundle.name>BigJoin</bundle.name>
     </properties>
 
@@ -53,7 +55,6 @@
             <artifactId>lucene-core</artifactId>
             <version>4.6.1</version>
         </dependency>
-
 
     </dependencies>
 
