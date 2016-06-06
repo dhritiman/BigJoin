@@ -1,0 +1,23 @@
+[
+ {
+     "name" : "headerSize" ,
+     "type" : "record",
+     "fields" : [ {"name":"numZones", "type":"int"} ]
+ },
+ {
+      "name" : "header",
+      "type" : "record",
+      "fields": [
+                  {"name" : "zone", "type" : "string"},
+                  {"name" : "ordinal", "type" : "int"}
+                ]
+ },
+ {
+      "fields": [
+          { "name": "listing", "type": "string" },
+          { "name": "bitsetLongArray", "type": {"type": "array", "items": "long"} }
+      ],
+      "name": "listingServiceability",
+      "type": "record"
+ }
+]
